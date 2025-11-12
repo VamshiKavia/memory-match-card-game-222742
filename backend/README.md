@@ -132,6 +132,9 @@ backend/
 
 - Session data is in-memory and ephemeral; restarting the server resets sessions.
 - Default session TTL is 120 minutes; expired sessions are evicted on access.
+- Deck generation:
+  - 4×4 boards (size=16) use a fixed glyph set exactly: [🍎, 🍌, 🍇, 🍉, 🍒, 🥝, 🍑, 🍍]. Each appears twice, then the deck is shuffled.
+  - Other sizes (e.g., 6×6) preserve existing behavior where pair IDs are generated as 0..(pairs-1), duplicated, and shuffled.
 
 ## Troubleshooting
 

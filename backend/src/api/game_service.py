@@ -50,23 +50,35 @@ def _generate_deck(size: BoardSize) -> List[int]:
     The deck is composed of exactly N/2 distinct values, each appearing twice,
     then shuffled. This ensures there are proper matching pairs on the board.
 
-    Explicit 4x4 rule:
-    - For size=4x4 (N=16), select exactly 8 unique glyph identifiers [0..7],
-      duplicate each once so every glyph appears exactly twice, then shuffle.
+    Fixed 4x4 glyph set:
+    - For size=4x4 (N=16), we lock the glyph identifiers to map exactly to the following
+      emoji set: [🍎, 🍌, 🍇, 🍉, 🍒, 🥝, 🍑, 🍍].
+      Implementation detail: the game engine represents cards by integer pair IDs;
+      for 4x4 we always use the exact IDs [0..7] (one per glyph), duplicate them once,
+      and shuffle. UI is responsible for rendering the corresponding emoji.
+      Other sizes (e.g., 6x6) preserve the existing behavior (IDs 0..pairs-1).
 
     Example:
         size=4x4 -> total=16 -> values [0..7] duplicated exactly twice -> shuffled
     """
     total = BoardSize.to_card_count(size)
     pairs = total // 2
-    # Choose the base set of values [0..pairs-1]
-    base_values = list(range(pairs))
+
+    # For 4x4 specifically, ensure base IDs are exactly [0..7] to map to the fixed glyph list.
+    # For other sizes, continue to use range(pairs).
+    if size == BoardSize.SMALL_4x4:
+        base_values = list(range(8))  # maps to [🍎, 🍌, 🍇, 🍉, 🍒, 🥝, 🍑, 🍍]
+    else:
+        base_values = list(range(pairs))
+
     # Duplicate and concatenate so each value appears exactly twice
     deck = [v for v in base_values for _ in range(2)]
+
     # Sanity: length must equal total
     if len(deck) != total:
         # Defensive guard; shouldn't happen with even totals
         raise ValueError(f"Invalid deck size constructed: expected {total}, got {len(deck)}")
+
     # Shuffle to randomize positions
     random.shuffle(deck)
     return deck
