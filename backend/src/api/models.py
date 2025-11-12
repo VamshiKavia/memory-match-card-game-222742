@@ -34,8 +34,9 @@ class NewGameRequest(BaseModel):
     @field_validator("size", mode="before")
     @classmethod
     def coerce_size(cls, v):
+        """Coerce common string aliases into supported BoardSize values."""
         if isinstance(v, str):
-            v = v.lower()
+            v = v.lower().strip()
             if v in {"4x4", "small", "16"}:
                 return BoardSize.SMALL_4x4
             if v in {"6x6", "large", "36"}:

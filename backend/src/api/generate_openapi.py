@@ -3,6 +3,11 @@ import os
 
 from src.api.main import app
 
+"""
+Script to generate OpenAPI schema for distribution to dependent containers.
+Run this after modifying API routes or models.
+"""
+
 # Get the OpenAPI schema
 openapi_schema = app.openapi()
 
