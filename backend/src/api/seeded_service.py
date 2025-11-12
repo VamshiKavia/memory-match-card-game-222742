@@ -46,6 +46,10 @@ class _Game:
     total_pairs: int
     created_at: float
     updated_at: float
+    # Track total moves (each match attempt increments once)
+    move_count: int
+    # Cached completion flag for quick checks
+    completed: bool
 
 
 class _SeedRandom:
@@ -130,6 +134,8 @@ class SeededGameService:
             total_pairs=total_pairs,
             created_at=now,
             updated_at=now,
+            move_count=0,
+            completed=False,
         )
         self._games[game.game_id] = game
         return game
@@ -140,11 +146,15 @@ class SeededGameService:
         game = self._games.get(game_id)
         if not game:
             return None
+        # Masking: Only return id and value (no matched flags here) as the API layer handles exposure.
         return list(game.deck)
 
     # PUBLIC_INTERFACE
-    def match(self, game_id: UUID, first_id: str, second_id: str) -> Tuple[bool, int]:
-        """Attempt to match two card ids. Returns (is_match, remaining_pairs).
+    def match(self, game_id: UUID, first_id: str, second_id: str) -> Tuple[bool, int, bool, int]:
+        """Attempt to match two card ids.
+
+        Returns:
+            (is_match, remaining_pairs, is_completed, move_count)
 
         Raises:
             KeyError: if game not found
@@ -166,15 +176,27 @@ class SeededGameService:
         if game.matched_ids.get(first.id) or game.matched_ids.get(second.id):
             raise ValueError("One or both cards already matched")
 
+        # Increment move count for every match attempt
+        game.move_count += 1
+
         is_match = first.value == second.value
         if is_match:
             game.matched_ids[first.id] = True
             game.matched_ids[second.id] = True
 
         remaining = game.total_pairs - (len(game.matched_ids) // 2)
+        game.completed = remaining == 0
         game.updated_at = _now()
         self._games[game_id] = game
-        return is_match, remaining
+        return is_match, remaining, game.completed, game.move_count
+
+    # PUBLIC_INTERFACE
+    def get_stats(self, game_id: UUID) -> Optional[Tuple[int, bool]]:
+        """Return (move_count, completed) if game exists, else None."""
+        game = self._games.get(game_id)
+        if not game:
+            return None
+        return game.move_count, game.completed
 
     def _generate_seed(self) -> str:
         """Generate user-friendly random seed string."""

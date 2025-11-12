@@ -25,7 +25,7 @@ app = FastAPI(
 # Env precedence:
 # - BACKEND_CORS_ORIGINS: comma-separated list of allowed origins
 # - REACT_APP_FRONTEND_URL: single allowed origin
-# - Defaults to common localhost ports
+# - Defaults to wildcard for dev and common localhost ports
 def _parse_cors_from_env() -> List[str]:
     origins: List[str] = []
     env_origins = os.getenv("BACKEND_CORS_ORIGINS")
@@ -39,12 +39,13 @@ def _parse_cors_from_env() -> List[str]:
         if frontend:
             origins.append(frontend.strip())
         else:
-            # defaults
+            # defaults: permissive in dev
             origins = [
                 "http://localhost:3000",
                 "http://127.0.0.1:3000",
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
+                "*",
             ]
     return origins
 
