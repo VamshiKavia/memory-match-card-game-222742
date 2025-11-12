@@ -45,12 +45,27 @@ class _GameSession:
 
 
 def _generate_deck(size: BoardSize) -> List[int]:
-    """Generate a shuffled deck of pair values for the given size."""
+    """Generate a shuffled deck of pair values for the given size.
+
+    The deck is composed of exactly N/2 distinct values, each appearing twice,
+    then shuffled. This ensures there are proper matching pairs on the board.
+
+    Example:
+        size=4x4 -> total=16 -> values [0..7] duplicated exactly twice -> shuffled
+    """
     total = BoardSize.to_card_count(size)
     pairs = total // 2
-    base = [i for i in range(pairs) for _ in range(2)]
-    random.shuffle(base)
-    return base
+    # Choose the base set of values [0..pairs-1]
+    base_values = list(range(pairs))
+    # Duplicate and concatenate so each value appears exactly twice
+    deck = [v for v in base_values for _ in range(2)]
+    # Sanity: length must equal total
+    if len(deck) != total:
+        # Defensive guard; shouldn't happen with even totals
+        raise ValueError(f"Invalid deck size constructed: expected {total}, got {len(deck)}")
+    # Shuffle to randomize positions
+    random.shuffle(deck)
+    return deck
 
 
 def _now_ts() -> float:
