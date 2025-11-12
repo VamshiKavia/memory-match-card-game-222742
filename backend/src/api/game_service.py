@@ -50,6 +50,10 @@ def _generate_deck(size: BoardSize) -> List[int]:
     The deck is composed of exactly N/2 distinct values, each appearing twice,
     then shuffled. This ensures there are proper matching pairs on the board.
 
+    Explicit 4x4 rule:
+    - For size=4x4 (N=16), select exactly 8 unique glyph identifiers [0..7],
+      duplicate each once so every glyph appears exactly twice, then shuffle.
+
     Example:
         size=4x4 -> total=16 -> values [0..7] duplicated exactly twice -> shuffled
     """
@@ -75,6 +79,8 @@ def _now_ts() -> float:
 def _make_card_view(idx: int, session: _GameSession) -> CardView:
     is_face_up = session.face_up[idx]
     is_matched = session.matched[idx]
+    # Masking rule: values are only exposed if currently face-up or already matched.
+    # This ensures GET state does not leak hidden card values.
     value: Optional[int] = session.deck[idx] if (is_face_up or is_matched) else None
     return CardView(index=idx, isFaceUp=is_face_up, isMatched=is_matched, value=value)
 
@@ -175,13 +181,19 @@ class MemoryGameService:
         - First flip: reveal card; do not increment move count.
         - Second flip: reveal card; increment move count by 1 and check for match.
           - If values match: mark both as matched; they remain face-up.
-          - If not a match: both are temporarily face-up in the response; state clears
-            first selection and turns both cards face-down for subsequent actions.
+            Returned view includes both cards with their values (isMatched=true).
+          - If not a match: both are temporarily face-up in the response (values visible
+            in that response only); then both are flipped back down internally after the
+            response, and first selection is cleared.
 
         Edge cases:
         - Ignore flips on already matched cards.
         - Ignore flipping the same index as an already face-up first selection.
         - Index must be within range; otherwise raise ValueError.
+
+        Visibility guarantees:
+        - GET state does not leak hidden values. Card.value is None unless a card is
+          face-up in the current response or already matched.
         """
         session = self._store.get(session_id)
         if session is None:
