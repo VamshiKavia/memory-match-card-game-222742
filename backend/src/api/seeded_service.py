@@ -5,12 +5,13 @@ import random
 import string
 import time
 from dataclasses import dataclass
+from enum import Enum
 from typing import Dict, List, Optional, Tuple
 from uuid import UUID, uuid4
 
 
 # PUBLIC_INTERFACE
-class Difficulty(str):
+class Difficulty(str, Enum):
     """Difficulty enumeration for the seeded deck service."""
     EASY = "easy"
     MEDIUM = "medium"
@@ -18,11 +19,20 @@ class Difficulty(str):
 
 
 # PUBLIC_INTERFACE
-def determine_difficulty(value: Optional[Difficulty]) -> Difficulty:
-    """Resolve difficulty with default."""
-    if value in (Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD):
-        return value  # type: ignore[return-value]
-    return Difficulty.EASY  # default
+def determine_difficulty(value: Optional["Difficulty"]) -> "Difficulty":
+    """Resolve difficulty with default.
+
+    Prefer Enum values; fallback to parsing strings case-insensitively.
+    """
+    if isinstance(value, Difficulty):
+        return value
+    # Accept string inputs defensively
+    if isinstance(value, str):
+        v = value.strip().lower()
+        if v in {Difficulty.EASY.value, Difficulty.MEDIUM.value, Difficulty.HARD.value}:
+            return Difficulty(v)
+    # default
+    return Difficulty.EASY
 
 
 # PUBLIC_INTERFACE
