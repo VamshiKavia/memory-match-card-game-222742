@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field
 
 from src.api.seeded_service import (
     Difficulty,
-    GameId,
     SeededGameService,
     determine_difficulty,
 )
@@ -31,7 +30,7 @@ class CreateGameRequest(BaseModel):
 # PUBLIC_INTERFACE
 class CreateGameResponse(BaseModel):
     """Response for new seeded game session."""
-    gameId: GameId = Field(..., description="Server-generated game identifier.")
+    gameId: UUID = Field(..., description="Server-generated game identifier.")
     seed: str = Field(..., description="Seed used for deterministic shuffling.")
     difficulty: Difficulty = Field(..., description="Selected difficulty for the deck.")
     totalCards: int = Field(..., description="Total number of cards in the deck.")
